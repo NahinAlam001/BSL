@@ -5,7 +5,9 @@ import mediapipe as mp
 
 mp_hands = mp.solutions.hands
 
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
+# Initialize the MediaPipe Hands model
+hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.3)
+
 DATA_DIR = './data'
 
 data = []
@@ -15,43 +17,52 @@ for dir_ in os.listdir(DATA_DIR):
     dir_path = os.path.join(DATA_DIR, dir_)
     if not os.path.isdir(dir_path):
         continue
-    
-    for img_path in os.listdir(dir_path):
-        img_full_path = os.path.join(dir_path, img_path)
-        img = cv2.imread(img_full_path)
-        
-        if img is None:
-            print(f"Warning: Unable to read image {img_full_path}. Skipping...")
+
+    for video_path in os.listdir(dir_path):
+        video_full_path = os.path.join(dir_path, video_path)
+        cap = cv2.VideoCapture(video_full_path)
+
+        if not cap.isOpened():
+            print(f"Warning: Unable to open video {video_full_path}. Skipping...")
             continue
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = hands.process(img_rgb)
+        while True:
+            ret, frame = cap.read()
 
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                data_aux = []
-                x_ = []
-                y_ = []
+            if not ret:
+                break  # End of video
 
-                # Extract landmarks
-                for i in range(len(hand_landmarks.landmark)):
-                    x = hand_landmarks.landmark[i].x
-                    y = hand_landmarks.landmark[i].y
+            # Convert the frame to RGB
+            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(img_rgb)
 
-                    x_.append(x)
-                    y_.append(y)
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    data_aux = []
+                    x_ = []
+                    y_ = []
 
-                # Normalize landmarks
-                for i in range(len(hand_landmarks.landmark)):
-                    x = hand_landmarks.landmark[i].x
-                    y = hand_landmarks.landmark[i].y
-                    data_aux.append(x - min(x_))
-                    data_aux.append(y - min(y_))
+                    # Extract landmarks
+                    for i in range(len(hand_landmarks.landmark)):
+                        x = hand_landmarks.landmark[i].x
+                        y = hand_landmarks.landmark[i].y
 
-                data.append(data_aux)
-                labels.append(dir_)
+                        x_.append(x)
+                        y_.append(y)
 
-# Save data using a context manager
+                    # Normalize landmarks
+                    for i in range(len(hand_landmarks.landmark)):
+                        x = hand_landmarks.landmark[i].x
+                        y = hand_landmarks.landmark[i].y
+                        data_aux.append(x - min(x_))
+                        data_aux.append(y - min(y_))
+
+                    data.append(data_aux)
+                    labels.append(dir_)
+
+        cap.release()
+
+# Save the extracted data and labels to a pickle file
 with open('data.pickle', 'wb') as f:
     pickle.dump({'data': data, 'labels': labels}, f)
 

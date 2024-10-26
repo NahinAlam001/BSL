@@ -1,17 +1,6 @@
-import pygame
 import time
 import os
 import cv2
-
-# Initialize pygame mixer for playing sounds
-pygame.mixer.init()
-
-# Define a function to play the notification sound
-def play_audio_notification():
-    pygame.mixer.music.load("click_sound.wav")  # Ensure you have this sound file
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():  # Wait until sound finishes playing
-        time.sleep(0.1)
 
 DATA_DIR = './data'
 if not os.path.exists(DATA_DIR):
@@ -19,7 +8,7 @@ if not os.path.exists(DATA_DIR):
 
 number_of_classes = 1
 dataset_size = 2  # Total number of videos per class
-video_length = 3  # Length of each video in seconds
+video_length = 5  # Length of each video in seconds
 fps = 20  # Frames per second
 
 cap = cv2.VideoCapture(0)
@@ -72,10 +61,7 @@ for j in range(number_of_classes):
         out.release()
         print("Recording finished for this video.")
 
-        # Play audio notification after recording finishes
-        play_audio_notification()
-
-        # Wait for 1 second before starting the next video
+        # Pause for 500 ms before starting the next video
         time.sleep(0.5)
 
         counter += 1
